@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Growth Blockers Scorecard</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+<style>
+/* Layout: one centered column, sticky progress bar, six blocker sections, then a results view that ranks them weakest first */
+:root {
+  --bg: #f3f7f8;
+  --surface: #ffffff;
+  --fg: #12262c;
+  --muted: #536a71;
+  --line: #d5e1e4;
+  --accent: #14778c;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2f1f4;
+  --bad: #b83a2b;
+  --bad-soft: #fbe9e6;
+  --warn: #9a6408;
+  --warn-soft: #fbf0d9;
+  --good: #1b7a58;
+  --good-soft: #def3ea;
+  --font-display: 'Cairo', 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
+  --font-body: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c191d;
+    --surface: #13252b;
+    --fg: #e6f0f2;
+    --muted: #9ab0b6;
+    --line: #27434b;
+    --accent: #4fb4c9;
+    --accent-ink: #06202a;
+    --accent-soft: #17323a;
+    --bad: #f0806f;
+    --bad-soft: #3a1f1c;
+    --warn: #e5b24f;
+    --warn-soft: #382b12;
+    --good: #52c99a;
+    --good-soft: #14352a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c191d;
+  --surface: #13252b;
+  --fg: #e6f0f2;
+  --muted: #9ab0b6;
+  --line: #27434b;
+  --accent: #4fb4c9;
+  --accent-ink: #06202a;
+  --accent-soft: #17323a;
+  --bad: #f0806f;
+  --bad-soft: #3a1f1c;
+  --warn: #e5b24f;
+  --warn-soft: #382b12;
+  --good: #52c99a;
+  --good-soft: #14352a;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.6; padding-inline: 16px; padding-block: 0 48px; }
+.wrap { max-width: 760px; margin-inline: auto; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.25; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 20px 8px; flex-wrap: wrap; }
+.kicker { color: var(--muted); font-size: 14px; letter-spacing: .02em; }
+.lang { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.lang button { border: 0; background: transparent; padding: 6px 14px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.lang button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+.intro { padding-block: 16px 20px; display: grid; gap: 12px; }
+.intro h1 { font-size: clamp(28px, 6vw, 40px); color: var(--accent); }
+.intro p { color: var(--muted); max-width: 62ch; }
+.privacy { font-size: 14px; }
+
+.progress { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 10px; border-bottom: 1px solid var(--line); }
+.progress-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); margin-bottom: 6px; font-variant-numeric: tabular-nums; }
+.track { height: 8px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.fill { height: 100%; width: 0; background: var(--accent); border-radius: 99px; transition: width .25s ease; }
+
+.section { margin-top: 28px; display: grid; gap: 12px; }
+.section-head { display: grid; gap: 2px; }
+.section-head .tag { font-size: 13px; color: var(--accent); font-weight: 600; letter-spacing: .04em; text-transform: uppercase; }
+.section-head h2 { font-size: 22px; }
+.section-head p { color: var(--muted); font-size: 15px; }
+
+.q { margin: 0; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 14px 16px; display: grid; gap: 12px; min-width: 0; }
+.q legend { padding: 0; float: left; width: 100%; font-weight: 500; }
+.q legend + * { clear: both; }
+.opts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.opt { position: relative; display: block; }
+.opt input { position: absolute; opacity: 0; inset: 0; width: 100%; height: 100%; margin: 0; cursor: pointer; }
+.opt span { display: block; text-align: center; padding: 9px 6px; border: 1px solid var(--line); border-radius: 8px; font-size: 15px; background: var(--bg); color: var(--fg); }
+.opt input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.opt input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.actions { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.btn { border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); padding: 12px 22px; border-radius: 10px; font-weight: 600; }
+.btn[disabled] { background: transparent; color: var(--muted); border-color: var(--line); cursor: not-allowed; }
+.btn.ghost { background: transparent; color: var(--accent); }
+.hint { color: var(--muted); font-size: 14px; }
+
+.result-head { margin-top: 28px; display: grid; gap: 8px; }
+.score-card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+.score-num { font-family: var(--font-display); font-size: 56px; font-weight: 700; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+.score-num small { font-size: 22px; color: var(--muted); font-weight: 600; }
+.score-text { display: grid; gap: 2px; min-width: 0; flex: 1 1 220px; }
+.score-text strong { font-family: var(--font-display); font-size: 19px; }
+.score-text span { color: var(--muted); font-size: 14px; }
+
+.bars { margin-top: 24px; display: grid; gap: 14px; }
+.bar-row { display: grid; gap: 6px; }
+.bar-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.bar-name { font-weight: 600; }
+.bar-score { display: inline-flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
+.pill { padding: 2px 10px; border-radius: 99px; font-size: 13px; font-weight: 600; }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.good { background: var(--good-soft); color: var(--good); }
+.bar-track { height: 12px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 99px; }
+.bar-fill.bad { background: var(--bad); }
+.bar-fill.warn { background: var(--warn); }
+.bar-fill.good { background: var(--good); }
+
+.focus { margin-top: 32px; display: grid; gap: 14px; }
+.focus h2 { font-size: 22px; }
+.advice { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 10px; }
+.advice h3 { font-size: 18px; }
+.advice dt { font-size: 13px; font-weight: 600; color: var(--accent); letter-spacing: .03em; text-transform: uppercase; }
+.advice dd { margin: 0 0 6px; }
+.advice dl { margin: 0; }
+.ok { background: var(--good-soft); color: var(--good); padding: 14px 16px; border-radius: 12px; font-weight: 500; }
+
+.cta { margin-top: 32px; background: var(--accent-soft); border-radius: 14px; padding: 20px; display: grid; gap: 12px; }
+.cta h3 { font-size: 19px; }
+.cta .row { display: flex; flex-wrap: wrap; gap: 12px; }
+.cta a.btn { text-decoration: none; display: inline-block; }
+.note { margin-top: 20px; font-size: 13px; color: var(--muted); }
+textarea.fallback { width: 100%; min-height: 150px; font: inherit; font-size: 14px; background: var(--surface); color: var(--fg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+
+@media (max-width: 420px) {
+  .score-num { font-size: 46px; }
+  .opt span { font-size: 14px; padding-inline: 2px; }
+}
+@media (prefers-reduced-motion: reduce) { .fill { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+(function () {
+  var PROFILE = 'https://www.linkedin.com/in/heba-kamaleldin-fouad/';
+  var VALUE = [2, 1, 0];
+  var D = {
+    en: {
+      dir: 'ltr', lang: 'en',
+      kicker: 'Heba Kamal Fouad · Market Research & Business Strategy',
+      title: 'Growth Blockers Scorecard',
+      intro: 'Eighteen short statements to show what is slowing your company down today. Answer honestly. You will see six areas ranked from weakest to strongest, with a first step for the two that need attention most. It takes about five minutes.',
+      privacy: 'Your answers stay in your browser. Nothing is saved or sent anywhere.',
+      opts: ['Yes', 'Sometimes', 'No'],
+      areaLabel: 'Area',
+      answered: function (n) { return n + ' of 18 answered'; },
+      show: 'Show my results',
+      remaining: function (n) { return 'Answer ' + n + ' more to see your results'; },
+      resultsTitle: 'Your results',
+      overall: 'Overall score',
+      bands: ['Growth is likely held back in several areas', 'Some areas work well, others slow you down', 'Your base is strong, start with the weakest area'],
+      pills: ['Blocker', 'Watch', 'Strong'],
+      focusTitle: 'Your biggest blockers right now',
+      look: 'How it usually shows up',
+      step: 'First step this month',
+      allGood: 'No clear blocker showed up. Review your lowest-scoring areas every quarter to keep it that way.',
+      copy: 'Copy my results', copied: 'Copied', edit: 'Edit my answers', again: 'Start again',
+      ctaTitle: 'Want a second opinion on your results?',
+      ctaText: 'Heba works with business owners and founders across the GCC and MENA to find what is really holding growth back. Send her your result on LinkedIn.',
+      ctaBtn: 'Message Heba on LinkedIn',
+      note: 'This is a self-assessment based only on your answers. It points to where to look first and is not a full diagnosis of your company.',
+      copyHead: 'Growth Blockers Scorecard',
+      fallbackLabel: 'Select and copy your results',
+      blockers: [
+        { name: 'Customer understanding', desc: 'Do you know your customer from their own words, or from team assumptions?',
+          qs: ['We regularly talk to customers directly, not only through our sales or service teams.', 'We know why the customers who left us chose to leave.', 'Our view of what customers need is based on what they told us, not on what we assume.'],
+          look: 'Each team knows a different part of the customer and nobody holds the whole picture.',
+          step: 'Hold 8 to 10 short conversations with customers who left or never bought, and write down their reasons in their own words.' },
+        { name: 'Numbers and visibility', desc: 'Can you see how the business is doing, clearly and quickly?',
+          qs: ['I can see last month’s sales, customers and costs without waiting days.', 'We track every month how many customers we win and how many we lose.', 'We know which products or customers bring us the most profit.'],
+          look: 'Decisions wait for reports, or are made on instinct because the numbers are late or scattered.',
+          step: 'Pick five numbers (sales, new customers, lost customers, margin, cash) and review them weekly in one place.' },
+        { name: 'Internal systems and speed', desc: 'Does work move through your company at a speed your customers expect?',
+          qs: ['A customer request moves through our company in few steps, without long waits.', 'Our daily work does not depend on manual, repeated tasks such as spreadsheets, paper or re-typing data.', 'We respond to customers as fast as our fastest competitor, or faster.'],
+          look: 'Customers wait because work passes through too many steps or manual hand-offs between teams.',
+          step: 'Map one customer request from first contact to delivery, count the steps and waiting days, then remove the slowest step.' },
+        { name: 'Market and competitors', desc: 'Do you know why customers choose someone else?',
+          qs: ['We know who customers compare us with when they choose.', 'We know why customers bought from our competitors.', 'We notice when a competitor changes its price, offer or service, and we respond on purpose.'],
+          look: 'Lost sales are explained with reasons the customers never actually gave.',
+          step: 'List your three closest competitors and ask recent customers what they compared you with.' },
+        { name: 'Offer and value', desc: 'Does the customer understand your value the way you mean it?',
+          qs: ['Customers can explain in one sentence why they should choose us.', 'We tested our price and offer with real customers before launching or changing them.', 'We checked how customers actually read our extras, such as gifts and discounts.'],
+          look: 'Customers cannot repeat what makes you different, or they read an extra you added as a sign of weakness.',
+          step: 'Test your main offer or price with a small group of real customers before you change it.' },
+        { name: 'Decisions and focus', desc: 'Do your decisions rest on evidence or on assumptions?',
+          qs: ['Big decisions are based on evidence, not only on experience or the loudest opinion in the room.', 'We stop or change ideas when new evidence shows they are not working.', 'Our team knows the two or three growth priorities for this quarter.'],
+          look: 'Ideas continue because they were decided first, not because they work.',
+          step: 'For each big initiative, write down the evidence that would make you stop it, and check it every month.' }
+      ]
+    },
+    ar: {
+      dir: 'rtl', lang: 'ar',
+      kicker: 'هبة كمال فؤاد · أبحاث السوق واستراتيجية الأعمال',
+      title: 'بطاقة تقييم معوّقات النمو',
+      intro: 'ثمانية عشر سؤالاً قصيراً تكشف لك ما يبطئ شركتك اليوم. أجب بصدق، وستظهر لك ستة مجالات مرتبة من الأضعف إلى الأقوى، مع خطوة أولى للمجالين الأكثر حاجة إلى الانتباه. تستغرق نحو خمس دقائق.',
+      privacy: 'تبقى إجاباتك في متصفحك فقط، ولا يتم حفظها أو إرسالها إلى أي جهة.',
+      opts: ['نعم', 'أحياناً', 'لا'],
+      areaLabel: 'المجال',
+      answered: function (n) { return 'تمت الإجابة عن ' + n + ' من 18'; },
+      show: 'اعرض نتيجتي',
+      remaining: function (n) { return 'أجب عن ' + n + ' سؤالاً آخر لتظهر النتيجة'; },
+      resultsTitle: 'نتيجتك',
+      overall: 'الدرجة الإجمالية',
+      bands: ['النمو يتعطّل غالباً في أكثر من مجال', 'بعض المجالات تعمل جيداً وبعضها يبطئ نموّك', 'أساسك قوي، ابدأ بأضعف مجال'],
+      pills: ['معوّق', 'يحتاج انتباهاً', 'قوي'],
+      focusTitle: 'أكبر معوّقين لديك الآن',
+      look: 'كيف يظهر غالباً',
+      step: 'أول خطوة هذا الشهر',
+      allGood: 'لم يظهر لديك معوّق واضح. راجع المجالات الأقل درجة كل ربع سنة لتحافظ على ذلك.',
+      copy: 'انسخ نتيجتي', copied: 'تم النسخ', edit: 'عدّل إجاباتي', again: 'ابدأ من جديد',
+      ctaTitle: 'تريد رأياً ثانياً في نتيجتك؟',
+      ctaText: 'تعمل هبة مع أصحاب الأعمال والمؤسسين في الخليج والشرق الأوسط وشمال أفريقيا لاكتشاف ما يعطّل النمو فعلاً. أرسل لها نتيجتك على لينكدإن.',
+      ctaBtn: 'تواصل مع هبة على لينكدإن',
+      note: 'هذه أداة تقييم ذاتي مبنية على إجاباتك فقط. تدلّك على أين تبدأ النظر، وليست تشخيصاً كاملاً لشركتك.',
+      copyHead: 'بطاقة تقييم معوّقات النمو',
+      fallbackLabel: 'حدّد نتيجتك وانسخها',
+      blockers: [
+        { name: 'فهم العميل', desc: 'هل تعرف عميلك من كلامه هو، أم من افتراضات الفريق؟',
+          qs: ['نتحدث بانتظام مع العملاء مباشرة، وليس فقط عبر فريق المبيعات أو خدمة العملاء.', 'نعرف لماذا ترك العملاء الذين غادرونا.', 'نبني فهمنا لاحتياجات العميل على ما قاله لنا، وليس على ما نفترضه.'],
+          look: 'كل فريق يعرف جزءاً مختلفاً من العميل، ولا أحد يملك الصورة كاملة.',
+          step: 'أجرِ من 8 إلى 10 محادثات قصيرة مع عملاء غادروا أو لم يشتروا، واكتب أسبابهم بكلماتهم.' },
+        { name: 'الأرقام والرؤية', desc: 'هل ترى أداء شركتك بوضوح وبسرعة؟',
+          qs: ['أستطيع الاطلاع على مبيعات الشهر الماضي وعملائه وتكاليفه دون انتظار أيام.', 'نتابع شهرياً عدد العملاء الذين نكسبهم والذين نخسرهم.', 'نعرف أي المنتجات أو العملاء يحقق لنا أعلى ربح.'],
+          look: 'تتأخر القرارات حتى تصل التقارير، أو تُتخذ بالإحساس لأن الأرقام متأخرة أو متفرقة.',
+          step: 'اختر خمسة أرقام (المبيعات، العملاء الجدد، العملاء المفقودون، هامش الربح، السيولة) وراجعها أسبوعياً في مكان واحد.' },
+        { name: 'الأنظمة الداخلية والسرعة', desc: 'هل يتحرك العمل داخل شركتك بسرعة تناسب عملاءك؟',
+          qs: ['طلب العميل يمر داخل الشركة بخطوات قليلة ودون انتظار طويل.', 'لا يعتمد عملنا اليومي على مهام يدوية متكررة مثل الجداول والأوراق وإعادة إدخال البيانات.', 'نرد على العملاء بسرعة تعادل أسرع منافسينا أو تفوقها.'],
+          look: 'ينتظر العميل لأن العمل يمر بخطوات كثيرة أو بتسليم يدوي بين الأقسام.',
+          step: 'ارسم مسار طلب واحد من أول تواصل إلى التسليم، واحسب الخطوات وأيام الانتظار، ثم احذف أبطأ خطوة.' },
+        { name: 'السوق والمنافسون', desc: 'هل تعرف لماذا يختار العميل غيرك؟',
+          qs: ['نعرف بمن يقارننا العملاء عند الاختيار.', 'نعرف لماذا اشترى العملاء من منافسينا.', 'نلاحظ عندما يغيّر منافس سعره أو عرضه أو خدمته، ونرد بقرار مدروس.'],
+          look: 'تُفسَّر خسارة المبيعات بأسباب لم يذكرها العملاء أصلاً.',
+          step: 'حدّد أقرب ثلاثة منافسين، واسأل عملاء حديثين عمّا قارنوا بينه وبينك.' },
+        { name: 'العرض والقيمة', desc: 'هل يفهم العميل قيمتك كما تقصدها أنت؟',
+          qs: ['يستطيع العملاء شرح سبب اختيارنا في جملة واحدة.', 'اختبرنا السعر والعرض مع عملاء حقيقيين قبل إطلاقهما أو تغييرهما.', 'راجعنا كيف يفهم العملاء إضافاتنا فعلاً، مثل الهدايا والخصومات.'],
+          look: 'لا يستطيع العملاء تكرار ما يميّزك، أو يفهمون الإضافة على أنها دليل ضعف في المنتج.',
+          step: 'اختبر عرضك الرئيسي أو سعرك مع مجموعة صغيرة من العملاء الحقيقيين قبل تغييره.' },
+        { name: 'القرارات والتركيز', desc: 'هل تقوم قراراتك على الدليل أم على الافتراض؟',
+          qs: ['تُبنى القرارات الكبيرة على أدلة، وليس على الخبرة أو على رأي أعلى صوت فقط.', 'نوقف الأفكار أو نغيّرها عندما تُظهر الأدلة أنها لا تنجح.', 'يعرف فريقنا أولويتين أو ثلاثاً للنمو هذا الربع.'],
+          look: 'تستمر الأفكار لأنها قُررت أولاً، وليس لأنها تنجح.',
+          step: 'لكل مبادرة كبيرة، اكتب الدليل الذي سيجعلك توقفها، وراجعه كل شهر.' }
+      ]
+    }
+  };
+
+  var state = { lang: 'en', view: 'form', answers: {}, copied: false, copyText: null };
+  try {
+    var saved = localStorage.getItem('gbs-lang');
+    if (saved === 'ar' || saved === 'en') state.lang = saved;
+    else if ((navigator.language || '').toLowerCase().indexOf('ar') === 0) state.lang = 'ar';
+  } catch (e) {
+    if ((navigator.language || '').toLowerCase().indexOf('ar') === 0) state.lang = 'ar';
+  }
+
+  var app = document.getElementById('app');
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function count() { return Object.keys(state.answers).length; }
+
+  function scores() {
+    var t = D[state.lang];
+    return t.blockers.map(function (b, bi) {
+      var s = 0;
+      for (var i = 0; i < 3; i++) s += VALUE[state.answers['q' + bi + '_' + i]] === undefined ? 0 : VALUE[state.answers['q' + bi + '_' + i]];
+      return { bi: bi, name: b.name, score: s, level: s <= 2 ? 0 : (s <= 4 ? 1 : 2) };
+    });
+  }
+
+  function header(t) {
+    return '<div class="top"><span class="kicker">' + esc(t.kicker) + '</span>' +
+      '<div class="lang" role="group" aria-label="Language / اللغة">' +
+      '<button type="button" data-lang="en" aria-pressed="' + (state.lang === 'en') + '">EN</button>' +
+      '<button type="button" data-lang="ar" aria-pressed="' + (state.lang === 'ar') + '">عربي</button></div></div>';
+  }
+
+  function renderForm(t) {
+    var n = count();
+    var h = header(t);
+    h += '<div class="intro"><h1>' + esc(t.title) + '</h1><p>' + esc(t.intro) + '</p><p class="privacy">' + esc(t.privacy) + '</p></div>';
+    h += '<div class="progress"><div class="progress-row"><span id="pcount">' + esc(t.answered(n)) + '</span></div><div class="track"><div class="fill" id="pfill" style="width:' + (n / 18 * 100) + '%"></div></div></div>';
+    t.blockers.forEach(function (b, bi) {
+      h += '<section class="section"><div class="section-head"><span class="tag">' + esc(t.areaLabel) + ' ' + (bi + 1) + ' / 6</span><h2>' + esc(b.name) + '</h2><p>' + esc(b.desc) + '</p></div>';
+      b.qs.forEach(function (q, qi) {
+        var key = 'q' + bi + '_' + qi;
+        h += '<fieldset class="q"><legend>' + esc(q) + '</legend><div class="opts">';
+        t.opts.forEach(function (o, oi) {
+          var id = key + '_' + oi;
+          h += '<label class="opt" for="' + id + '"><input type="radio" id="' + id + '" name="' + key + '" value="' + oi + '"' + (String(state.answers[key]) === String(oi) ? ' checked' : '') + '><span>' + esc(o) + '</span></label>';
+        });
+        h += '</div></fieldset>';
+      });
+      h += '</section>';
+    });
+    h += '<div class="actions"><button type="button" class="btn" id="show"' + (n < 18 ? ' disabled' : '') + '>' + esc(t.show) + '</button><span class="hint" id="hint">' + (n < 18 ? esc(t.remaining(18 - n)) : '') + '</span></div>';
+    h += '<p class="note">' + esc(t.note) + '</p>';
+    app.innerHTML = h;
+  }
+
+  function resultsText(t, sc, total) {
+    var lines = [t.copyHead + ': ' + total + '/36'];
+    sc.slice().sort(function (a, b) { return a.score - b.score || a.bi - b.bi; }).forEach(function (s) {
+      lines.push(s.name + ': ' + s.score + '/6 (' + t.pills[s.level] + ')');
+    });
+    return lines.join('\n');
+  }
+
+  function renderResults(t) {
+    var sc = scores();
+    var total = sc.reduce(function (a, s) { return a + s.score; }, 0);
+    var pct = total / 36;
+    var band = pct < 0.45 ? 0 : (pct < 0.7 ? 1 : 2);
+    var sorted = sc.slice().sort(function (a, b) { return a.score - b.score || a.bi - b.bi; });
+    var cls = ['bad', 'warn', 'good'];
+    var h = header(t);
+    h += '<div class="result-head"><h1 style="font-size:clamp(26px,5vw,34px);color:var(--accent)">' + esc(t.resultsTitle) + '</h1>';
+    h += '<div class="score-card"><div class="score-num">' + total + '<small> / 36</small></div><div class="score-text"><strong>' + esc(t.bands[band]) + '</strong><span>' + esc(t.overall) + '</span></div></div></div>';
+    h += '<div class="bars">';
+    sorted.forEach(function (s) {
+      h += '<div class="bar-row"><div class="bar-top"><span class="bar-name">' + esc(s.name) + '</span><span class="bar-score">' + s.score + ' / 6 <span class="pill ' + cls[s.level] + '">' + esc(t.pills[s.level]) + '</span></span></div>' +
+        '<div class="bar-track" role="img" aria-label="' + esc(s.name + ': ' + s.score + '/6') + '"><div class="bar-fill ' + cls[s.level] + '" style="width:' + (s.score / 6 * 100) + '%"></div></div></div>';
+    });
+    h += '</div>';
+    var needs = sorted.filter(function (s) { return s.score <= 4; }).slice(0, 2);
+    h += '<div class="focus"><h2>' + esc(t.focusTitle) + '</h2>';
+    if (!needs.length) {
+      h += '<p class="ok">' + esc(t.allGood) + '</p>';
+    } else {
+      needs.forEach(function (s) {
+        var b = t.blockers[s.bi];
+        h += '<div class="advice"><h3>' + esc(b.name) + '</h3><dl><dt>' + esc(t.look) + '</dt><dd>' + esc(b.look) + '</dd><dt>' + esc(t.step) + '</dt><dd>' + esc(b.step) + '</dd></dl></div>';
+      });
+    }
+    h += '</div>';
+    h += '<div class="actions"><button type="button" class="btn" id="copy">' + esc(state.copied ? t.copied : t.copy) + '</button><button type="button" class="btn ghost" id="edit">' + esc(t.edit) + '</button><button type="button" class="btn ghost" id="again">' + esc(t.again) + '</button></div>';
+    if (state.copyText) {
+      h += '<div style="margin-top:12px"><label class="hint" for="fb">' + esc(t.fallbackLabel) + '</label><textarea class="fallback" id="fb" readonly>' + esc(state.copyText) + '</textarea></div>';
+    }
+    h += '<div class="cta"><h3>' + esc(t.ctaTitle) + '</h3><p>' + esc(t.ctaText) + '</p><div class="row"><a class="btn" href="' + PROFILE + '" target="_blank" rel="noopener">' + esc(t.ctaBtn) + '</a></div></div>';
+    h += '<p class="note">' + esc(t.note) + '</p>';
+    app.innerHTML = h;
+    state._text = resultsText(t, sc, total);
+  }
+
+  function render(scrollTop) {
+    var t = D[state.lang];
+    document.documentElement.lang = t.lang;
+    app.setAttribute('dir', t.dir);
+    document.title = t.title;
+    if (state.view === 'form') renderForm(t); else renderResults(t);
+    if (scrollTop) { try { window.scrollTo({ top: 0 }); } catch (e) { window.scrollTo(0, 0); } }
+  }
+
+  function updateProgress() {
+    var t = D[state.lang], n = count();
+    var pc = document.getElementById('pcount'), pf = document.getElementById('pfill'), btn = document.getElementById('show'), hint = document.getElementById('hint');
+    if (pc) pc.textContent = t.answered(n);
+    if (pf) pf.style.width = (n / 18 * 100) + '%';
+    if (btn) btn.disabled = n < 18;
+    if (hint) hint.textContent = n < 18 ? t.remaining(18 - n) : '';
+  }
+
+  app.addEventListener('change', function (e) {
+    var el = e.target;
+    if (el && el.type === 'radio') { state.answers[el.name] = el.value; updateProgress(); }
+  });
+
+  app.addEventListener('click', function (e) {
+    var b = e.target.closest('button, a');
+    if (!b) return;
+    if (b.dataset && b.dataset.lang) {
+      state.lang = b.dataset.lang;
+      try { localStorage.setItem('gbs-lang', state.lang); } catch (err) {}
+      render(false);
+      return;
+    }
+    if (b.id === 'show' && count() === 18) { state.view = 'results'; state.copied = false; state.copyText = null; render(true); }
+    else if (b.id === 'edit') { state.view = 'form'; render(true); }
+    else if (b.id === 'again') { state.answers = {}; state.view = 'form'; state.copied = false; state.copyText = null; render(true); }
+    else if (b.id === 'copy') {
+      var txt = state._text;
+      var done = function () { state.copied = true; state.copyText = null; render(false); };
+      var fail = function () { state.copyText = txt; render(false); var f = document.getElementById('fb'); if (f) { f.focus(); f.select(); } };
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done, fail); else fail();
+      } catch (err) { fail(); }
+    }
+  });
+
+  render(false);
+})();
+</script>
+</body>
+</html>
